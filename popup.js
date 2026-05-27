@@ -200,28 +200,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
-     * Show the "copied" toast notification.
-     */
-    function showCopiedNotification() {
-        const el = document.getElementById('password-copied');
-        el.textContent = 'Password copied to clipboard.';
-        el.classList.add('copied');
-        setTimeout(function() {
-            el.classList.remove('copied');
-        }, 3000);
-    }
-
-    /**
-     * Show an error toast notification.
+     * Show a toast notification, matching Tinter's toast pattern.
      *
-     * @param {string} message
+     * @param {string}  message
+     * @param {boolean} [isError=false]
      */
-    function showErrorNotification(message) {
-        const el = document.getElementById('password-copied');
-        el.textContent = message;
-        el.classList.add('copied', 'error');
+    function showToast(message, isError) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = isError ? 'toast error' : 'toast';
+        toast.textContent = message;
+        container.appendChild(toast);
+
+        toast.offsetHeight; // force reflow so the transition fires
+
+        toast.classList.add('show');
         setTimeout(function() {
-            el.classList.remove('copied', 'error');
+            toast.classList.remove('show');
+            setTimeout(function() {
+                if (container.contains(toast)) {
+                    container.removeChild(toast);
+                }
+            }, 300);
         }, 3000);
     }
 
@@ -231,10 +231,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function copyPassword() {
         const password = document.getElementById('password-display').textContent;
         navigator.clipboard.writeText(password)
-            .then(showCopiedNotification)
-            .catch(function() {
-                showErrorNotification('Copy failed — try again.');
-            });
+            .then(function() { showToast('Password copied to clipboard.'); })
+            .catch(function() { showToast('Copy failed — try again.', true); });
     }
 
     /**
