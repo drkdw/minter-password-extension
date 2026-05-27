@@ -64,6 +64,23 @@ document.addEventListener('click', function(event) {
     }
 });
 
+// ===== Crypto-secure random =====
+
+/**
+ * Return a cryptographically secure random integer in [0, max).
+ * Uses crypto.getRandomValues() — built into the browser, works offline.
+ *
+ * @param {number} max
+ * @return {number}
+ */
+function secureRandomInt(max) {
+    const array = new Uint32Array(1);
+    // Rejection sampling eliminates modulo bias.
+    const limit = 0x100000000 - (0x100000000 % max);
+    do { crypto.getRandomValues(array); } while (array[0] >= limit);
+    return array[0] % max;
+}
+
 // ===== Password Generator =====
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -73,11 +90,11 @@ document.addEventListener('DOMContentLoaded', function() {
      * Generate a password based on current options.
      */
     function generatePassword() {
-        var uppercase  = document.getElementById('uppercase-checkbox').checked;
-        var lowercase  = document.getElementById('lowercase-checkbox').checked;
-        var numbers    = document.getElementById('number-checkbox').checked;
-        var symbols    = document.getElementById('symbol-checkbox').checked;
-        var rainbow    = document.getElementById('rainbow-checkbox').checked;
+        const uppercase = document.getElementById('uppercase-checkbox').checked;
+        let   lowercase = document.getElementById('lowercase-checkbox').checked;
+        const numbers   = document.getElementById('number-checkbox').checked;
+        const symbols   = document.getElementById('symbol-checkbox').checked;
+        const rainbow   = document.getElementById('rainbow-checkbox').checked;
 
         // Ensure at least one type is selected
         if (!uppercase && !lowercase && !numbers && !symbols) {
@@ -86,14 +103,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Build charset
-        var charset = '';
+        let charset = '';
         if (uppercase) { charset += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'; }
         if (lowercase) { charset += 'abcdefghijklmnopqrstuvwxyz'; }
         if (numbers)   { charset += '0123456789'; }
         if (symbols)   { charset += '!@#$%^&*()_+'; }
 
-        var length = parseInt(document.getElementById('length-slider').value, 10);
-        var password = '';
+        const length = parseInt(document.getElementById('length-slider').value, 10);
+        let password = '';
 
         // Guarantee at least one char from each selected type
         if (uppercase) { password += getRandomCharacter('ABCDEFGHIJKLMNOPQRSTUVWXYZ'); }
@@ -102,17 +119,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (symbols)   { password += getRandomCharacter('!@#$%^&*()_+'); }
 
         // Fill remaining length
-        var remaining = length - password.length;
-        for (var i = 0; i < remaining; i++) {
-            password += charset.charAt(Math.floor(Math.random() * charset.length));
+        const remaining = length - password.length;
+        for (let i = 0; i < remaining; i++) {
+            password += charset.charAt(secureRandomInt(charset.length));
         }
 
         password = randomizePositions(password);
 
         // Build colored HTML
-        var html = '';
-        for (var j = 0; j < password.length; j++) {
-            var char = password.charAt(j);
+        let html = '';
+        for (let j = 0; j < password.length; j++) {
+            const char = password.charAt(j);
             if (rainbow) {
                 html += '<span style="color: hsl(' + (j * 10) + ', 100%, 50%);">' + char + '</span>';
             } else if (numbers && /\d/.test(char)) {
@@ -126,48 +143,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
         document.getElementById('password-display').innerHTML = html;
 
-        // Strength meter
-        var strength = 0;
-        if (length > 3)  { strength += 25; }
-        if (length > 6)  { strength += 25; }
-        if (length > 9)  { strength += 25; }
-        if (length > 10) { strength += 25; }
+        // Strength meter — based on Shannon entropy (bits)
+        let charsetSize = 0;
+        if (uppercase) charsetSize += 26;
+        if (lowercase) charsetSize += 26;
+        if (numbers)   charsetSize += 10;
+        if (symbols)   charsetSize += 12;
 
-        var meter = document.getElementById('strength-meter');
+        const entropy = length * Math.log2(charsetSize);
+
+        let strength = 0;
+        let strengthClass = 'progress-bar';
+        if (entropy >= 28) { strength = 25;  strengthClass = 'progress-bar bg-danger';  } // weak
+        if (entropy >= 36) { strength = 50;  strengthClass = 'progress-bar bg-warning'; } // fair
+        if (entropy >= 60) { strength = 75;  strengthClass = 'progress-bar bg-success'; } // good
+        if (entropy >= 80) { strength = 100; strengthClass = 'progress-bar bg-strong';  } // strong
+
+        const meter = document.getElementById('strength-meter');
         meter.style.width = strength + '%';
-
-        if (length < 4) {
-            meter.className = 'progress-bar';
-        } else if (length < 7) {
-            meter.className = 'progress-bar bg-danger';
-        } else if (length < 10) {
-            meter.className = 'progress-bar bg-success';
-        } else {
-            meter.className = 'progress-bar bg-dark';
-        }
+        meter.className = strengthClass;
     }
 
     /**
-     * Return a random character from the given string.
+     * Return a cryptographically secure random character from the given string.
      *
      * @param {string} charset
      * @return {string}
      */
     function getRandomCharacter(charset) {
-        return charset.charAt(Math.floor(Math.random() * charset.length));
+        return charset.charAt(secureRandomInt(charset.length));
     }
 
     /**
-     * Fisher-Yates shuffle on a string.
+     * Fisher-Yates shuffle on a string using crypto-secure random.
      *
      * @param {string} str
      * @return {string}
      */
     function randomizePositions(str) {
-        var arr = str.split('');
-        for (var i = arr.length - 1; i > 0; i--) {
-            var j = Math.floor(Math.random() * (i + 1));
-            var tmp = arr[i];
+        const arr = str.split('');
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = secureRandomInt(i + 1);
+            const tmp = arr[i];
             arr[i] = arr[j];
             arr[j] = tmp;
         }
@@ -178,7 +195,7 @@ document.addEventListener('DOMContentLoaded', function() {
      * Update the length display next to the slider.
      */
     function updateLengthDisplay() {
-        var length = document.getElementById('length-slider').value;
+        const length = document.getElementById('length-slider').value;
         document.getElementById('length-display').textContent = length;
     }
 
@@ -186,7 +203,8 @@ document.addEventListener('DOMContentLoaded', function() {
      * Show the "copied" toast notification.
      */
     function showCopiedNotification() {
-        var el = document.getElementById('password-copied');
+        const el = document.getElementById('password-copied');
+        el.textContent = 'Password copied to clipboard.';
         el.classList.add('copied');
         setTimeout(function() {
             el.classList.remove('copied');
@@ -194,20 +212,36 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
+     * Show an error toast notification.
+     *
+     * @param {string} message
+     */
+    function showErrorNotification(message) {
+        const el = document.getElementById('password-copied');
+        el.textContent = message;
+        el.classList.add('copied', 'error');
+        setTimeout(function() {
+            el.classList.remove('copied', 'error');
+        }, 3000);
+    }
+
+    /**
      * Copy the current password (plain text) to clipboard.
      */
     function copyPassword() {
-        var password = document.getElementById('password-display').textContent;
-        navigator.clipboard.writeText(password).then(function() {
-            showCopiedNotification();
-        });
+        const password = document.getElementById('password-display').textContent;
+        navigator.clipboard.writeText(password)
+            .then(showCopiedNotification)
+            .catch(function() {
+                showErrorNotification('Copy failed — try again.');
+            });
     }
 
     /**
      * Persist current option values to chrome.storage.local.
      */
     function savePreferences() {
-        var prefs = {
+        const prefs = {
             length:    parseInt(document.getElementById('length-slider').value, 10),
             uppercase: document.getElementById('uppercase-checkbox').checked,
             lowercase: document.getElementById('lowercase-checkbox').checked,
@@ -226,7 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function loadPreferences(callback) {
         chrome.storage.local.get(['prefs'], function(result) {
-            var prefs = result.prefs;
+            const prefs = result.prefs;
             if (prefs) {
                 if (typeof prefs.length === 'number') {
                     document.getElementById('length-slider').value = prefs.length;
@@ -262,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Icon clicks
+    // Button clicks
     document.getElementById('generate-icon').addEventListener('click', generatePassword);
     document.getElementById('copy-button').addEventListener('click', copyPassword);
 

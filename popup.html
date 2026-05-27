@@ -23,16 +23,16 @@
     <div id="main-container">
 
         <div id="password-container">
-            <div id="password-display"></div>
+            <div id="password-display" aria-label="Generated password" aria-live="polite"></div>
             <div id="password-icons">
-                <div id="generate-icon" title="Generate new password">
+                <button id="generate-icon" title="Generate new password" aria-label="Generate new password">
                     <svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="23 4 23 10 17 10"></polyline>
                         <polyline points="1 20 1 14 7 14"></polyline>
                         <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
                     </svg>
-                </div>
+                </button>
             </div>
             <button id="copy-button">Copy</button>
             <div class="progress">
@@ -72,11 +72,11 @@
 
     </div>
 
-    <div id="password-copied">Password copied to clipboard.</div>
+    <div id="password-copied" role="status" aria-live="polite"></div>
 
     <footer>
         <a href="https://buymeacoffee.com/hoolite" target="_blank" id="bmc-link">
-            <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee">
+            <img src="icons/bmc-button.png" alt="Buy Me A Coffee">
         </a>
         <a id="github-link" href="https://github.com/drkdw/password-extension" target="_blank" title="View on GitHub" aria-label="View on GitHub">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-label="GitHub">
